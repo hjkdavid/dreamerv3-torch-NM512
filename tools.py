@@ -39,7 +39,25 @@ class RequiresGrad:
         self._model.requires_grad_(requires_grad=False)
 
 
+import time
+
+
 class TimeRecording:
+    def __init__(self, comment):
+        self._comment = comment
+
+    def __enter__(self):
+        # Use time.perf_counter() for high-resolution timing
+        self._start_time = time.perf_counter()
+
+    def __exit__(self, *args):
+        # Calculate elapsed time
+        self._end_time = time.perf_counter()
+        elapsed_time = self._end_time - self._start_time
+        print(f"{self._comment}: {elapsed_time:.4f} seconds")
+
+
+'''class TimeRecording:
     def __init__(self, comment):
         self._comment = comment
 
@@ -51,7 +69,7 @@ class TimeRecording:
     def __exit__(self, *args):
         self._nd.record()
         torch.cuda.synchronize()
-        print(self._comment, self._st.elapsed_time(self._nd) / 1000)
+        print(self._comment, self._st.elapsed_time(self._nd) / 1000)'''
 
 
 class Logger:
@@ -737,6 +755,7 @@ class Optimizer:
         self._clip = clip
         self._wd = wd
         self._wd_pattern = wd_pattern
+        self._device = 'mps' if torch.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu'
         self._opt = {
             "adam": lambda: torch.optim.Adam(parameters, lr=lr, eps=eps),
             "nadam": lambda: NotImplemented(f"{opt} is not implemented"),
@@ -744,7 +763,7 @@ class Optimizer:
             "sgd": lambda: torch.optim.SGD(parameters, lr=lr),
             "momentum": lambda: torch.optim.SGD(parameters, lr=lr, momentum=0.9),
         }[opt]()
-        self._scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
+        self._scaler = torch.amp.GradScaler(self._device, enabled=use_amp)
 
     def __call__(self, loss, params, retain_graph=True):
         assert len(loss.shape) == 0, loss.shape
@@ -951,6 +970,10 @@ def set_seed_everywhere(seed):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    if torch.backends.mps.is_available():
+        torch.manual_seed(
+            seed
+        )  # MPS currently only supports manual seeding for reproducibility
     np.random.seed(seed)
     random.seed(seed)
 

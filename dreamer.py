@@ -168,6 +168,13 @@ def make_env(config, mode, id):
             seed=config.seed + id,
         )
         env = wrappers.OneHotAction(env)
+    elif suite == "procgen":
+        import envs.procgen as procgen
+
+        env = procgen.ProcGen(
+            task,
+        )
+        env = wrappers.OneHotAction(env)
     elif suite == "dmlab":
         import envs.dmlab as dmlab
 
@@ -358,6 +365,8 @@ if __name__ == "__main__":
     defaults = {}
     for name in name_list:
         recursive_update(defaults, configs[name])
+    if torch.mps.is_available():
+        defaults["device"] = "mps"
     parser = argparse.ArgumentParser()
     for key, value in sorted(defaults.items(), key=lambda x: x[0]):
         arg_type = tools.args_type(value)

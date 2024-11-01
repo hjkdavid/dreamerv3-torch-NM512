@@ -145,6 +145,22 @@ atari100k:
   actions: needed
   time_limit: 108000
 
+procgen:
+  steps: 4e5
+  envs: 1
+  action_repeat: 4
+  train_ratio: 1024
+  video_pred_log: true
+  eval_episode_num: 100
+  actor: {dist: 'onehot', std: 'none'}
+  imag_gradient: 'reinforce'
+  stickey: False
+  lives: unused
+  noops: 30
+  resize: opencv
+  actions: needed
+  time_limit: 108000
+
 minecraft:
   task: minecraft_diamond
   step: 1e8
